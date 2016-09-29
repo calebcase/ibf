@@ -346,3 +346,67 @@ $ jq '.cells' demo.ibf
   }
 ]
 ```
+
+The way `ibf list` works is to pop "pure" cells out of the set and then look
+again for more. We can simulate this by removing elements manually. Let's
+remove 'B Value':
+
+```
+$ ibf remove demo.ibf 'B Value'
+$ jq '.cells' demo.ibf 
+```
+
+```json
+[
+  {
+    "id": 0,
+    "hash": 0,
+    "count": 0
+  },
+  {
+    "id": 0,
+    "hash": 0,
+    "count": 0
+  },
+  {
+    "id": 18331428859966820,
+    "hash": 11333042293537241000,
+    "count": 1
+  },
+  {
+    "id": 0,
+    "hash": 0,
+    "count": 0
+  },
+  {
+    "id": 0,
+    "hash": 0,
+    "count": 0
+  },
+  {
+    "id": 0,
+    "hash": 0,
+    "count": 0
+  },
+  {
+    "id": 18894378813388132,
+    "hash": 9477556251531188000,
+    "count": 1
+  },
+  {
+    "id": 18894378813388132,
+    "hash": 9477556251531188000,
+    "count": 1
+  },
+  {
+    "id": 18331428859966820,
+    "hash": 11333042293537241000,
+    "count": 1
+  },
+  {
+    "id": 562949953421312,
+    "hash": 2215778548118941700,
+    "count": 2
+  }
+]
+```
