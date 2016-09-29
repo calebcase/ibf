@@ -15,7 +15,7 @@ The complexity for listing the difference between `IBF/1` and `IBF/2` is O(Δ).
 Following the standard Go installation pattern:
 
 ```
-$ go install github.com/calebcase/ibf
+$ go get github.com/calebcase/ibf
 ```
 
 ## Usage
