@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
-
-	"../lib"
 )
 
 var popCmd = &cobra.Command{

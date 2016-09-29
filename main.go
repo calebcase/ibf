@@ -1,6 +1,6 @@
 package main
 
-import "./cmd"
+import "github.com/calebcase/ibf/cmd"
 
 func main() {
 	cmd.Execute()

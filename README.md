@@ -224,9 +224,9 @@ $ cat sorted.seq.2 | ibf insert seq.2
 $ time (ibf subtract seq.1 seq.2 seq.1-2; ibf list seq.1-2 | wc -l)
 100
 
-real	X
-user	X
-sys	  X
+real  X
+user  X
+sys   X
 ```
 
 ### Size
@@ -239,18 +239,18 @@ Size of the sets:
 
 ```
 $ du -sh sorted.seq.1
-76M	sorted.seq.1
+76M sorted.seq.1
 $ du -sh sorted.seq.2
-76M	sorted.seq.2
+76M sorted.seq.2
 ```
 
 Size of an IBF that can detect up to 100 changes with high probability:
 
 ```
 $ du -sh seq.1
-12K	seq.1
+12K seq.1
 $ du -sh seq.2
-12K	seq.2
+12K seq.2
 ```
 
 ---

@@ -6,9 +6,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
-
-	"../lib"
 )
 
 var createCmd = &cobra.Command{

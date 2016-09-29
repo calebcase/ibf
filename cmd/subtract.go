@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"os"
 
+	"github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
-
-	"../lib"
 )
 
 var subtractCmd = &cobra.Command{
