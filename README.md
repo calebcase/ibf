@@ -10,6 +10,8 @@ An IBF is particularly useful for determining difference between arbitrarily
 large sets where the expected difference between the sets is relatively small.
 The complexity for listing the difference between `IBF/1` and `IBF/2` is O(Δ).
 
+See the [walkthrough][walkthrough] for a brief overview of the topics.
+
 ## Install
 
 Following the standard Go installation pattern:
@@ -257,3 +259,4 @@ $ du -sh seq.2
 
 [bloom filters]: https://en.wikipedia.org/wiki/Bloom_filter
 [whats the difference]: https://www.ics.uci.edu/~eppstein/pubs/EppGooUye-SIGCOMM-11.pdf
+[walkthrough]: walkthrough.md
