@@ -30,12 +30,12 @@ var createCmd = &cobra.Command{
 
 		r := rand.New(rand.NewSource(seed))
 
-		positioners := []*ibf.Hasher{
-			ibf.NewHasher(uint64(r.Int63()), uint64(r.Int63())),
-			ibf.NewHasher(uint64(r.Int63()), uint64(r.Int63())),
-			ibf.NewHasher(uint64(r.Int63()), uint64(r.Int63())),
+		positioners := []*ibf.Hash{
+			ibf.NewHash(uint64(r.Int63()), uint64(r.Int63())),
+			ibf.NewHash(uint64(r.Int63()), uint64(r.Int63())),
+			ibf.NewHash(uint64(r.Int63()), uint64(r.Int63())),
 		}
-		hasher := ibf.NewHasher(uint64(r.Int63()), uint64(r.Int63()))
+		hasher := ibf.NewHash(uint64(r.Int63()), uint64(r.Int63()))
 
 		set := ibf.NewIBF(size, positioners, hasher)
 

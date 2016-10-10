@@ -13,7 +13,7 @@ var subtractCmd = &cobra.Command{
 	Short: "Subtract the second IBF from the first. If third is provided, write the result there. Otherwise overwrite the first.",
 	Run: func(cmd *cobra.Command, args []string) {
 		paths := args
-		ibfs := [2]*ibf.IBF{}
+		ibfs := [2]ibf.IBFer{}
 
 		for i, path := range paths {
 			if i > 1 {
@@ -25,7 +25,7 @@ var subtractCmd = &cobra.Command{
 
 			decoder := json.NewDecoder(file)
 
-			ibf := &ibf.IBF{}
+			ibf := ibf.NewEmptyIBF()
 			err = decoder.Decode(ibf)
 			cannot(err)
 			ibfs[i] = ibf

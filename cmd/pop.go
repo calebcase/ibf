@@ -20,7 +20,7 @@ var popCmd = &cobra.Command{
 
 		decoder := json.NewDecoder(file)
 
-		ibf := &ibf.IBF{}
+		ibf := ibf.NewEmptyIBF()
 		err = decoder.Decode(ibf)
 		cannot(err)
 		file.Close()
