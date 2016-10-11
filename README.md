@@ -16,7 +16,7 @@ See the [walkthrough][walkthrough] for a brief overview of the topics.
 
 Following the standard Go installation pattern:
 
-```
+```bash
 $ go get github.com/calebcase/ibf
 ```
 
@@ -27,7 +27,7 @@ $ go get github.com/calebcase/ibf
 This will create an IBF with a size of 80 cells. It takes approximately `1.5 *
 delta` cells to have high probability of decoding all differences.
 
-```
+```bash
 $ ibf create a.ibf 80
 ```
 
@@ -36,7 +36,7 @@ $ ibf create a.ibf 80
 This will generate all numbers from 0 to 10000000, one per line, and add them
 to the IBF.
 
-```
+```bash
 $ seq 0 10000000 | ibf insert a.ibf
 ```
 
@@ -44,24 +44,24 @@ $ seq 0 10000000 | ibf insert a.ibf
 
 This will create a copy of the above set and remove numbers 0 through 9.
 
-```
+```bash
 $ cp a.ibf b.ibf
 $ seq 0 9 | ibf remove a.ibf
 ```
 
 ### Subtracting IBFs
 
-This will compute the difference between two IBFs.
+This will compute the symmetric difference between two IBFs.
 
-```
+```bash
 $ ibf subtract a.ibf b.ibf a-b.ibf
 ```
 
 ### Listing
 
-This will list values from the computed difference.
+This will list values from the computed symmetric difference.
 
-```
+```bash
 $ ibf list a-b.ibf
 7
 0
@@ -80,6 +80,15 @@ as the difference exceeds the `cells / 1.5`), then the listing will return what
 it can and exit non-zero (meaning it is always clear when a listing is
 incomplete).
 
+### Comparing
+
+Similar to listing, but skipping the creation of the extra difference file and
+following the style of the familiar `comm` tool:
+
+```bash
+$ ibf comm a.ibf b.ibf
+```
+
 ### Chaining
 
 By default, insert and delete will attempt to echo their stdin to stdout if
@@ -92,46 +101,41 @@ incremental updates.
 
 This will create IBFs of a range of sizes:
 
-```
-$ ibf create a.64.ibf 64
-$ ibf create a.128.ibf 128
-$ ibf create a.256.ibf 256
+```bash
+$ for s in 64 128 256; do ibf create a.$s.ibf $s; done
 ```
 
 This will insert the same set of data into all of them:
 
-```
+```bash
 $ seq 0 10000000 | ibf insert a.64.ibf | ibf insert a.128.ibf | ibf insert a.256.ibf
 ```
 
 This will copy those and remove the same elements from all of them:
 
-```
-$ cp a.64.ibf b.64.ibf
-$ cp a.128.ibf b.128.ibf
-$ cp a.256.ibf b.256.ibf
+```bash
+$ for s in 64 128 256; do cp a.$s.ibf b.$s.ibf; done
 $ seq 100 200 | ibf remove b.64.ibf | ibf remove b.128.ibf | ibf remove b.256.ibf
 ```
 
 We can then compute the differences of each size:
 
-```
-$ ibf subtract a.64.ibf b.64.ibf a-b.64.ibf
-$ ibf subtract a.128.ibf b.128.ibf a-b.128.ibf
-$ ibf subtract a.256.ibf b.256.ibf a-b.256.ibf
+```bash
+$ for s in 64 128 256; do ibf subtract a.$s.ibf b.$s.ibf a-b.$s.ibf; done
 ```
 
 Then observe that we get an incomplete listing (non-zero exit) from the IBF of
 size 64, but from sizes 128 and 256 we get the complete difference:
 
-```
+```bash
 $ ibf list a-b.64.ibf; echo Incomplete $?
 110
 116
+Unable to list all elements (right).
 Incomplete 1
 ```
 
-```
+```bash
 $ ibf list a-b.128.ibf; echo Incomplete $?
 139
 107
@@ -144,7 +148,7 @@ $ ibf list a-b.128.ibf; echo Incomplete $?
 Incomplete 0
 ```
 
-```
+```bash
 $ ibf list a-b.256.ibf; echo Incomplete $?
 139
 102
@@ -179,7 +183,7 @@ For example, assuming you don't have newlines in your file names (an assumption
 you should be careful about), you can determine the difference between two file
 listings very efficiently:
 
-```
+```bash
 $ rm /home/$USER/foobar
 $ ibf create home.1.ibf 10
 $ find /home/$USER | ibf insert home.1.ibf
@@ -197,38 +201,41 @@ $ ibf list home.2-1.ibf
 
 ### Runtime
 
-As far as utility is concerned, this tool can answer questions similar to tool
-`comm` - That is, what is only in set 1?
+As far as utility is concerned, this tool can answer questions similar to the
+tool `comm` - That is, what is only in set 1 and 2 (but not in both)?
 
 `comm` requires sorted inputs so we do some extra work here to get the inputs
-into a usable format. I will omit the actual timings here, but hint that they
-are favorable to IBFs.
+into a usable format. We do similar prep work to insert the elements into the
+IBFs. The incremental cost of updating the IBFs is lower than re-sorting would
+be.
 
-```
-$ seq 0 10000000 | sort > sorted.seq.1
-$ seq 100 10000000 | sort > sorted.seq.2
+```bash
+$ seq 0 10000000 > raw.seq.1 
+$ seq 100 10000000 > raw.seq.2
 ```
 
-```
-$ time comm -1 sorted.seq.1 sorted.seq.2 | wc -l
+```bash
+$ sort raw.seq.1 > sorted.seq.1
+$ sort raw.seq.2 > sorted.seq.2
+$ time comm -3 sorted.seq.1 sorted.seq.2 | wc -l
 100
 
-real  X
-user  X
-sys   X
+real  0m2.984s
+user  0m2.944s
+sys 0m0.036s
 ```
 
-```
-$ ibf create seq.1 150
-$ ibf create seq.2 150
-$ cat sorted.seq.1 | ibf insert seq.1
-$ cat sorted.seq.2 | ibf insert seq.2
-$ time (ibf subtract seq.1 seq.2 seq.1-2; ibf list seq.1-2 | wc -l)
+```bash
+$ ibf create seq.1.ibf 150
+$ ibf create seq.2.ibf 150
+$ cat raw.seq.1 | ibf insert seq.1.ibf
+$ cat raw.seq.2 | ibf insert seq.2.ibf
+$ time ibf comm seq.1.ibf seq.2.ibf | wc -l
 100
 
-real  X
-user  X
-sys   X
+real  0m0.010s
+user  0m0.008s
+sys   0m0.000s
 ```
 
 ### Size
@@ -239,7 +246,7 @@ expected.
 
 Size of the sets:
 
-```
+```bash
 $ du -sh sorted.seq.1
 76M sorted.seq.1
 $ du -sh sorted.seq.2
@@ -248,10 +255,10 @@ $ du -sh sorted.seq.2
 
 Size of an IBF that can detect up to 100 changes with high probability:
 
-```
-$ du -sh seq.1
+```bash
+$ du -sh seq.1.ibf
 12K seq.1
-$ du -sh seq.2
+$ du -sh seq.2.ibf
 12K seq.2
 ```
 
