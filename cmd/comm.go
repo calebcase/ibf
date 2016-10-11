@@ -9,22 +9,37 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var listCmd = &cobra.Command{
-	Use:   "list IBF",
-	Short: "List available keys from the set.",
+var commCmd = &cobra.Command{
+	Use:   "comm IBF1 IBF2",
+	Short: "Compare IBF1 and IBF2.",
 	Run: func(cmd *cobra.Command, args []string) {
-		var path = args[0]
+		// Load IBF1 and IBF2.
+		paths := args
+		ibfs := [2]ibf.IBFer{}
 
-		file, err := os.Open(path)
-		cannot(err)
+		for i, path := range paths {
+			if i > 1 {
+				break
+			}
 
-		decoder := json.NewDecoder(file)
+			file, err := os.Open(path)
+			cannot(err)
 
-		ibf := ibf.NewEmptyIBF()
-		err = decoder.Decode(ibf)
-		cannot(err)
-		file.Close()
+			decoder := json.NewDecoder(file)
 
+			ibf := ibf.NewEmptyIBF()
+			err = decoder.Decode(ibf)
+			cannot(err)
+			ibfs[i] = ibf
+
+			file.Close()
+		}
+
+		// Subtract IBF2 from IBF1.
+		ibfs[0].Subtract(ibfs[1])
+		ibf := ibfs[0]
+
+		// Produce the two-column output.
 		leftEmpty := true
 		for val, err := ibf.Pop(); err == nil; val, err = ibf.Pop() {
 			if !cfg.suppressLeft {
@@ -39,7 +54,7 @@ var listCmd = &cobra.Command{
 		ibf.Invert()
 		for val, err := ibf.Pop(); err == nil; val, err = ibf.Pop() {
 			if !cfg.suppressRight {
-				fmt.Printf("%s\n", string(val.Bytes()))
+				fmt.Printf("%s%s\n", cfg.columnDelimiter, string(val.Bytes()))
 			}
 		}
 		if !cfg.suppressRight {
@@ -66,8 +81,10 @@ var listCmd = &cobra.Command{
 }
 
 func init() {
-	listCmd.Flags().BoolVarP(&cfg.suppressLeft, "left", "1", false, "Suppress values unique to left-side (positive count).")
-	listCmd.Flags().BoolVarP(&cfg.suppressRight, "right", "2", false, "Suppress values unique to right-side (negative count).")
+	commCmd.Flags().StringVarP(&cfg.columnDelimiter, "output-delimiter", "d", "\t", "Separate columns with STR.")
 
-	RootCmd.AddCommand(listCmd)
+	commCmd.Flags().BoolVarP(&cfg.suppressLeft, "left", "1", false, "Suppress values unique to left-side (IBF1).")
+	commCmd.Flags().BoolVarP(&cfg.suppressRight, "right", "2", false, "Suppress values unique to right-side (IBF2).")
+
+	RootCmd.AddCommand(commCmd)
 }

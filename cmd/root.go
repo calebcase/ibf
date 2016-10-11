@@ -8,13 +8,18 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var echo string
+var cfg struct {
+	cfgFile         string
+	echo            string
+	suppressLeft    bool
+	suppressRight   bool
+	columnDelimiter string
+}
 
 var RootCmd = &cobra.Command{
-	Use:   "set COMMAND [OPTIONS]",
-	Short: "set CLI tool",
-	Long:  "A CLI tool for managing set membership.",
+	Use:   "ibf COMMAND [OPTIONS]",
+	Short: "IBF CLI tool",
+	Long:  "A CLI tool for managing Invertible Bloom Filters (IBF).",
 }
 
 func Execute() {
@@ -29,13 +34,13 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	// Global configuration settings.
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.set.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfg.cfgFile, "config", "", "config file (default is $HOME/.set.yaml)")
 }
 
 func initConfig() {
 	// Enable ability to specify config file via flag.
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
+	if cfg.cfgFile != "" {
+		viper.SetConfigFile(cfg.cfgFile)
 	}
 
 	// Config file is named '.set.<ext>', loaded from the users home

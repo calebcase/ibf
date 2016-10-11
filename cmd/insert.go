@@ -21,11 +21,11 @@ var insertCmd = &cobra.Command{
 
 		// Should we echo our input?
 		echoed := false
-		if strings.Compare(echo, "true") == 0 {
+		if strings.Compare(cfg.echo, "true") == 0 {
 			echoed = true
-		} else if strings.Compare(echo, "false") == 0 {
+		} else if strings.Compare(cfg.echo, "false") == 0 {
 			echoed = false
-		} else if strings.Compare(echo, "auto") == 0 {
+		} else if strings.Compare(cfg.echo, "auto") == 0 {
 			if !terminal.IsTerminal(int(os.Stdout.Fd())) {
 				echoed = true
 			}
@@ -72,7 +72,7 @@ var insertCmd = &cobra.Command{
 }
 
 func init() {
-	insertCmd.Flags().StringVarP(&echo, "echo", "e", "auto", "Echo the values from stdin on stdout.")
+	insertCmd.Flags().StringVarP(&cfg.echo, "echo", "e", "auto", "Echo the values from stdin on stdout.")
 
 	RootCmd.AddCommand(insertCmd)
 }
