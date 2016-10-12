@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,6 +9,10 @@ import (
 	"github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
 )
+
+func indexed(data []byte) (int64, []byte) {
+	return int64(binary.LittleEndian.Uint64(data[len(data)-8:])), data[:len(data)-9]
+}
 
 var commCmd = &cobra.Command{
 	Use:   "comm IBF1 IBF2",
@@ -43,7 +48,12 @@ var commCmd = &cobra.Command{
 		leftEmpty := true
 		for val, err := ibf.Pop(); err == nil; val, err = ibf.Pop() {
 			if !cfg.suppressLeft {
-				fmt.Printf("%s\n", string(val.Bytes()))
+				if cfg.blockIndex >= 0 {
+					idx, bytes := indexed(val.Bytes())
+					fmt.Printf("%d:%s\n", idx, string(bytes))
+				} else {
+					fmt.Printf("%s\n", string(val.Bytes()))
+				}
 			}
 		}
 		if !cfg.suppressLeft {
@@ -54,7 +64,12 @@ var commCmd = &cobra.Command{
 		ibf.Invert()
 		for val, err := ibf.Pop(); err == nil; val, err = ibf.Pop() {
 			if !cfg.suppressRight {
-				fmt.Printf("%s%s\n", cfg.columnDelimiter, string(val.Bytes()))
+				if cfg.blockIndex >= 0 {
+					idx, bytes := indexed(val.Bytes())
+					fmt.Printf("%s%d:%s\n", cfg.columnDelimiter, idx, string(bytes))
+				} else {
+					fmt.Printf("%s%s\n", cfg.columnDelimiter, string(val.Bytes()))
+				}
 			}
 		}
 		if !cfg.suppressRight {
@@ -85,6 +100,9 @@ func init() {
 
 	commCmd.Flags().BoolVarP(&cfg.suppressLeft, "left", "1", false, "Suppress values unique to left-side (IBF1).")
 	commCmd.Flags().BoolVarP(&cfg.suppressRight, "right", "2", false, "Suppress values unique to right-side (IBF2).")
+
+	commCmd.Flags().Int64VarP(&cfg.blockIndex, "block-index", "i", -1, "Values are assumed to be prefixed with an int64 index.")
+	commCmd.Flags().Lookup("block-index").NoOptDefVal = "0"
 
 	RootCmd.AddCommand(commCmd)
 }

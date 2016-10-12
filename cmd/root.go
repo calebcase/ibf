@@ -14,6 +14,8 @@ var cfg struct {
 	suppressLeft    bool
 	suppressRight   bool
 	columnDelimiter string
+	blockSize       int
+	blockIndex      int64
 }
 
 var RootCmd = &cobra.Command{
