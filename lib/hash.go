@@ -26,6 +26,8 @@ type Hash struct {
 	p hash
 }
 
+var _ Hasher = (*Hash)(nil)
+
 func NewHash(key0, key1 uint64) *Hash {
 	return &Hash{hash{[2]uint64{key0, key1}}}
 }

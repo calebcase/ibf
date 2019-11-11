@@ -11,8 +11,12 @@ import (
 type IBFer interface {
 	Insert(key *big.Int)
 	Remove(key *big.Int)
+
 	Pop() (*big.Int, error)
+
+	Union(IBFer)
 	Subtract(IBFer)
+
 	Invert()
 
 	Clone() IBFer
@@ -42,6 +46,8 @@ type ibf struct {
 type IBF struct {
 	p ibf
 }
+
+var _ IBFer = (*IBF)(nil)
 
 func NewIBF(size uint64, positioners []*Hash, hasher *Hash) *IBF {
 	cells := make([]*Cell, size)
@@ -149,6 +155,16 @@ func (self *IBF) Pop() (*big.Int, error) {
 
 	// Empty set, nothing to pop.
 	return nil, errors.New("Empty set.")
+}
+
+func (self *IBF) Union(ibf IBFer) {
+	cells := ibf.GetCells()
+
+	for i := 0; i < len(self.p.Cells); i++ {
+		self.p.Cells[i].Union(cells[i])
+	}
+
+	self.p.Cardinality.Add(self.p.Cardinality, ibf.GetCardinality())
 }
 
 func (self *IBF) Subtract(ibf IBFer) {

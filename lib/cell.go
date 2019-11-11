@@ -38,6 +38,8 @@ type Cell struct {
 	p cell
 }
 
+var _ Celler = (*Cell)(nil)
+
 func NewCell() *Cell {
 	return &Cell{cell{
 		Id:    big.NewInt(0),
@@ -56,6 +58,12 @@ func (self *Cell) Remove(key *big.Int, hash uint64) {
 	self.p.Id.Xor(self.p.Id, key)
 	self.p.Hash = self.p.Hash ^ hash
 	self.p.Count -= 1
+}
+
+func (self *Cell) Union(cell Celler) {
+	self.p.Id.Xor(self.p.Id, cell.GetId())
+	self.p.Hash = self.p.Hash ^ cell.GetHash()
+	self.p.Count += cell.GetCount()
 }
 
 func (self *Cell) Subtract(cell Celler) {
