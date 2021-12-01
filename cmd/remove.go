@@ -2,13 +2,10 @@ package cmd
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"math/big"
 	"os"
 	"strings"
 
-	"github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -16,7 +13,8 @@ import (
 var removeCmd = &cobra.Command{
 	Use:   "remove IBF KEY",
 	Short: "Remove the key into the set. If key isn't provided, they will be read from stdin one per line.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var path = args[0]
 
 		// Should we echo our input?
@@ -31,43 +29,31 @@ var removeCmd = &cobra.Command{
 			}
 		}
 
-		file, err := os.Open(path)
-		cannot(err)
-
-		decoder := json.NewDecoder(file)
-
-		ibf := ibf.NewEmptyIBF()
-		err = decoder.Decode(ibf)
-		cannot(err)
-		file.Close()
+		set, err := open(path)
+		if err != nil {
+			return err
+		}
 
 		if len(args) == 2 {
-			var key = args[1]
-
-			val := new(big.Int)
-			val.SetBytes([]byte(key))
-			ibf.Remove(val)
+			set.Remove([]byte(args[1]))
 		} else {
 			scanner := bufio.NewScanner(os.Stdin)
 			for scanner.Scan() {
 				bytes := scanner.Bytes()
-				val := new(big.Int)
-				val.SetBytes(bytes)
-				ibf.Remove(val)
+
+				set.Remove(bytes)
 
 				if echoed {
 					fmt.Printf("%s\n", string(bytes))
 				}
 			}
+			err = scanner.Err()
+			if err != nil {
+				return err
+			}
 		}
 
-		file, err = os.Create(path)
-		cannot(err)
-
-		encoder := json.NewEncoder(file)
-
-		err = encoder.Encode(&ibf)
-		cannot(err)
+		return create(path, set)
 	},
 }
 

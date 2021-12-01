@@ -1,48 +1,43 @@
 package cmd
 
 import (
-	"encoding/json"
-	"errors"
+	"fmt"
 	"os"
 
-	"github.com/calebcase/ibf/lib"
+	ibf "github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
 )
 
 var mergeCmd = &cobra.Command{
 	Use:   "merge IBF IBF [IBF]",
 	Short: "Merge the second IBF into the first. If third is provided, write the result there. Otherwise overwrite the first. The difference between the first and second must be small enough to be completely listed otherwise merging is not possible.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:  cobra.RangeArgs(2, 3),
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		paths := args
-		ibfs := [2]ibf.IBFer{}
+		sets := [2]*ibf.IBF{}
 
 		for i, path := range paths {
 			if i > 1 {
 				break
 			}
 
-			file, err := os.Open(path)
-			cannot(err)
-
-			decoder := json.NewDecoder(file)
-
-			ibf := ibf.NewEmptyIBF()
-			err = decoder.Decode(ibf)
-			cannot(err)
-			ibfs[i] = ibf
-
-			file.Close()
+			sets[i], err = open(path)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Attempt to remove the elements in first from second and then
 		// list the remainder. For each of the remainder, insert into
 		// first.
-		ibfs[1].Subtract(ibfs[0])
-		for val, err := ibfs[1].Pop(); err == nil; val, err = ibfs[1].Pop() {
-			ibfs[0].Insert(val)
+		sets[1].Subtract(sets[0])
+		for val, err := sets[1].Pop(); err == nil; val, err = sets[1].Pop() {
+			sets[0].Insert(val)
 		}
-		if !ibfs[1].IsEmpty() {
-			cannot(errors.New("More elements in the set, but unable to retrieve."))
+		if !sets[1].IsEmpty() {
+			fmt.Fprintf(os.Stderr, "More elements in the set, but unable to retrieve.\n")
+
+			return ibf.ErrNoPureCell
 		}
 
 		var output string
@@ -53,13 +48,7 @@ var mergeCmd = &cobra.Command{
 			output = paths[2]
 		}
 
-		file, err := os.Create(output)
-		cannot(err)
-
-		encoder := json.NewEncoder(file)
-
-		err = encoder.Encode(ibfs[0])
-		cannot(err)
+		return create(output, sets[0])
 	},
 }
 

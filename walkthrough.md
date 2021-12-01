@@ -149,53 +149,73 @@ The actual IBF cells, composed as discussed of an `id`, `hash`, and `count`.
   "size": 10,
   "cells": [
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     },
     {
-      "id": 0,
-      "hash": 0,
+      "key": {
+        "data": "AAAAAAAAAAA="
+      },
+      "digest": 0,
       "count": 0
     }
   ],
@@ -218,53 +238,73 @@ $ jq '.cells' demo.ibf
 ```json
 [
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 18331428859966820,
-    "hash": 11333042293537241000,
+    "key": {
+      "data": "AAAAAAAAAAdBIFZhbHVl"
+    },
+    "digest": 11333042293537241000,
     "count": 1
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 18331428859966820,
-    "hash": 11333042293537241000,
+    "key": {
+      "data": "AAAAAAAAAAdBIFZhbHVl"
+    },
+    "digest": 11333042293537241000,
     "count": 1
   },
   {
-    "id": 18331428859966820,
-    "hash": 11333042293537241000,
+    "key": {
+      "data": "AAAAAAAAAAdBIFZhbHVl"
+    },
+    "digest": 11333042293537241000,
     "count": 1
   }
 ]
@@ -295,53 +335,73 @@ $ jq '.cells' demo.ibf
 ```json
 [
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 18331428859966820,
-    "hash": 11333042293537241000,
+    "key": {
+      "data": "AAAAAAAAAAdBIFZhbHVl"
+    },
+    "digest": 11333042293537241000,
     "count": 1
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 18612903836677476,
-    "hash": 10437079027557620000,
+    "key": {
+      "data": "AAAAAAAAAAdCIFZhbHVl"
+    },
+    "digest": 10437079027557620000,
     "count": 1
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 18894378813388132,
-    "hash": 9477556251531188000,
+    "key": {
+      "data": "AAAAAAAAAAdDIFZhbHVl"
+    },
+    "digest": 9477556251531188000,
     "count": 1
   },
   {
-    "id": 281474976710656,
-    "hash": 1391892804557128400,
+    "key": {
+      "data": "AAAAAAAAAAABAAAAAAAA"
+    },
+    "digest": 1391892804557128400,
     "count": 2
   },
   {
-    "id": 844424930131968,
-    "hash": 977555963097886000,
+    "key": {
+      "data": "AAAAAAAAAAADAAAAAAAA"
+    },
+    "digest": 977555963097886000,
     "count": 2
   },
   {
-    "id": 562949953421312,
-    "hash": 2215778548118941700,
+    "key": {
+      "data": "AAAAAAAAAAACAAAAAAAA"
+    },
+    "digest": 2215778548118941700,
     "count": 2
   }
 ]
@@ -359,53 +419,73 @@ $ jq '.cells' demo.ibf
 ```json
 [
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 18331428859966820,
-    "hash": 11333042293537241000,
+    "key": {
+      "data": "AAAAAAAAAAdBIFZhbHVl"
+    },
+    "digest": 11333042293537241000,
     "count": 1
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAAAAAAAAAAA"
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 0,
-    "hash": 0,
+    "key": {
+      "data": "AAAAAAAAAAA="
+    },
+    "digest": 0,
     "count": 0
   },
   {
-    "id": 18894378813388132,
-    "hash": 9477556251531188000,
+    "key": {
+      "data": "AAAAAAAAAAdDIFZhbHVl"
+    },
+    "digest": 9477556251531188000,
     "count": 1
   },
   {
-    "id": 18894378813388132,
-    "hash": 9477556251531188000,
+    "key": {
+      "data": "AAAAAAAAAAdDIFZhbHVl"
+    },
+    "digest": 9477556251531188000,
     "count": 1
   },
   {
-    "id": 18331428859966820,
-    "hash": 11333042293537241000,
+    "key": {
+      "data": "AAAAAAAAAAdBIFZhbHVl"
+    },
+    "digest": 11333042293537241000,
     "count": 1
   },
   {
-    "id": 562949953421312,
-    "hash": 2215778548118941700,
+    "key": {
+      "data": "AAAAAAAAAAACAAAAAAAA"
+    },
+    "digest": 2215778548118941700,
     "count": 2
   }
 ]

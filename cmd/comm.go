@@ -2,11 +2,10 @@ package cmd
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/calebcase/ibf/lib"
+	ibf "github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
 )
 
@@ -17,63 +16,59 @@ func indexed(data []byte) (int64, []byte) {
 var commCmd = &cobra.Command{
 	Use:   "comm IBF1 IBF2",
 	Short: "Compare IBF1 and IBF2.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		// Load IBF1 and IBF2.
 		paths := args
-		ibfs := [2]ibf.IBFer{}
+		sets := [2]*ibf.IBF{}
 
 		for i, path := range paths {
 			if i > 1 {
 				break
 			}
 
-			file, err := os.Open(path)
-			cannot(err)
-
-			decoder := json.NewDecoder(file)
-
-			ibf := ibf.NewEmptyIBF()
-			err = decoder.Decode(ibf)
-			cannot(err)
-			ibfs[i] = ibf
-
-			file.Close()
+			sets[i], err = open(path)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Subtract IBF2 from IBF1.
-		ibfs[0].Subtract(ibfs[1])
-		ibf := ibfs[0]
+		set := sets[0].Clone()
+		set.Subtract(sets[1])
 
 		// Produce the two-column output.
 		leftEmpty := true
-		for val, err := ibf.Pop(); err == nil; val, err = ibf.Pop() {
+		for val, err := set.Pop(); err == nil; val, err = set.Pop() {
 			if !cfg.suppressLeft {
 				if cfg.blockIndex >= 0 {
-					idx, bytes := indexed(val.Bytes())
+					idx, bytes := indexed(val)
 					fmt.Printf("%d:%s\n", idx, string(bytes))
 				} else {
-					fmt.Printf("%s\n", string(val.Bytes()))
+					fmt.Printf("%s\n", string(val))
 				}
 			}
 		}
 		if !cfg.suppressLeft {
-			leftEmpty = ibf.IsEmpty()
+			leftEmpty = set.IsEmpty()
 		}
 
+		set = sets[1].Clone()
+		set.Subtract(sets[0])
+
 		rightEmpty := true
-		ibf.Invert()
-		for val, err := ibf.Pop(); err == nil; val, err = ibf.Pop() {
+		for val, err := set.Pop(); err == nil; val, err = set.Pop() {
 			if !cfg.suppressRight {
 				if cfg.blockIndex >= 0 {
-					idx, bytes := indexed(val.Bytes())
+					idx, bytes := indexed(val)
 					fmt.Printf("%s%d:%s\n", cfg.columnDelimiter, idx, string(bytes))
 				} else {
-					fmt.Printf("%s%s\n", cfg.columnDelimiter, string(val.Bytes()))
+					fmt.Printf("%s%s\n", cfg.columnDelimiter, string(val))
 				}
 			}
 		}
 		if !cfg.suppressRight {
-			rightEmpty = ibf.IsEmpty()
+			rightEmpty = set.IsEmpty()
 		}
 
 		// Incomplete listing?
@@ -90,8 +85,11 @@ var commCmd = &cobra.Command{
 			}
 
 			fmt.Fprintf(os.Stderr, "Unable to list all elements (%s).\n", side)
+
 			os.Exit(1)
 		}
+
+		return nil
 	},
 }
 

@@ -1,224 +1,222 @@
 package ibf
 
-import (
-	"encoding/json"
-	"errors"
-	"math/big"
-)
+import "math/rand"
 
-// Interface
-
-type IBFer interface {
-	Insert(key *big.Int)
-	Remove(key *big.Int)
-
-	Pop() (*big.Int, error)
-
-	Union(IBFer)
-	Subtract(IBFer)
-
-	Invert()
-
-	Clone() IBFer
-
-	GetSize() uint64
-	GetCells() []Celler
-	GetCardinality() *big.Int
-
-	IsEmpty() bool
-
-	json.Marshaler
-	json.Unmarshaler
-}
-
-// IBF
-
-type ibf struct {
+// IBF holds the state of an invertable bloom filter.
+type IBF struct {
 	Positioners []*Hash `json:"positioners"`
 	Hasher      *Hash   `json:"hasher"`
 
 	Size  uint64  `json:"size"`
 	Cells []*Cell `json:"cells"`
 
-	Cardinality *big.Int `json:"cardinality"`
+	Cardinality int64 `json:"cardinality"`
 }
 
-type IBF struct {
-	p ibf
+// NewIBF creates a new IBF of the given size. An IBF can accurately handle
+// differences of approximately 2/3rds the configured size (e.g. a size of 100
+// would allow for ~66 differences to be accurately retrieved). 3 positioners
+// and a hasher are created using the output from a random number generator
+// initialized with the seed.
+func NewIBF(size uint64, seed int64) *IBF {
+	rng := rand.New(rand.NewSource(seed))
+
+	positioners := []*Hash{
+		NewHash(uint64(rng.Int63()), uint64(rng.Int63())),
+		NewHash(uint64(rng.Int63()), uint64(rng.Int63())),
+		NewHash(uint64(rng.Int63()), uint64(rng.Int63())),
+	}
+	hasher := NewHash(uint64(rng.Int63()), uint64(rng.Int63()))
+
+	return NewIBFWithHash(size, positioners, hasher)
 }
 
-var _ IBFer = (*IBF)(nil)
-
-func NewIBF(size uint64, positioners []*Hash, hasher *Hash) *IBF {
+// NewIBFWithHash creates a new IBF with the provided positioners and hasher.
+// It will use the given hashers for positioning and computing the key hashes.
+// The positioners must all be initialized with different seeds to ensure they
+// do not produce the same positions for the same key.
+func NewIBFWithHash(size uint64, positioners []*Hash, hasher *Hash) *IBF {
 	cells := make([]*Cell, size)
-	for i, _ := range cells {
+	for i := range cells {
 		cells[i] = NewCell()
 	}
 
-	return &IBF{ibf{
+	return &IBF{
 		Positioners: positioners,
 		Hasher:      hasher,
 
 		Size:  size,
 		Cells: cells,
 
-		Cardinality: big.NewInt(0),
-	}}
+		Cardinality: 0,
+	}
 }
 
-func NewEmptyIBF() *IBF {
-	return &IBF{}
-}
-
-func (self *IBF) Insert(key *big.Int) {
-	hash := self.p.Hasher.Hash(key)
+// getPositions returns the cells that the key would occupy. It always returns
+// len(positioners) many cells ensuring that no key is under represented.
+func (i *IBF) getPositions(key []byte, digest uint64) (cells []*Cell) {
+	cells = make([]*Cell, len(i.Positioners))
 	used := map[uint64]bool{}
 
-	for _, positioner := range self.p.Positioners {
-		index := positioner.Hash(key) % self.p.Size
-		for used[index] {
-			index = (index + 1) % self.p.Size
-		}
-		used[index] = true
+	for j, positioner := range i.Positioners {
+		index := positioner.Hash(key) % i.Size
 
-		self.p.Cells[index].Insert(key, hash)
+		// NOTE: We need to keep looking if we have found a collision
+		// with an already used position.
+		for used[index] {
+			index = (index + 1) % i.Size
+		}
+
+		used[index] = true
+		cells[j] = i.Cells[index]
 	}
 
-	self.p.Cardinality.Add(self.p.Cardinality, ONE)
+	return cells
 }
 
-func (self *IBF) Remove(key *big.Int) {
-	total := len(self.p.Positioners)
-	cells := make([]*Cell, total)
-	hash := self.p.Hasher.Hash(key)
-	used := map[uint64]bool{}
+// Insert adds the key to the set.
+//
+// NOTE: This does not know if the key already exists and will add it
+// unconditionally. If the key did already exist in the set, then that
+// effectively would remove it!
+func (i *IBF) Insert(key []byte) {
+	digest := i.Hasher.Hash(key)
+	cells := i.getPositions(key, digest)
 
-	// Find all the positions.
-	for i, positioner := range self.p.Positioners {
-		index := positioner.Hash(key) % self.p.Size
-		for used[index] {
-			index = (index + 1) % self.p.Size
-		}
-		used[index] = true
-
-		cells[i] = self.p.Cells[index]
+	for _, c := range cells {
+		c.Insert(key, digest)
 	}
 
-	// Determine if all cells are filled.
-	all_filled := true
-	for _, cell := range cells {
-		if cell.IsEmpty() {
-			all_filled = false
-			break
-		}
-	}
-	if !all_filled {
-		// It can't be in the set if all cells aren't filled.
-		return
-	}
-
-	for _, cell := range cells {
-		cell.Remove(key, hash)
-	}
-
-	self.p.Cardinality.Sub(self.p.Cardinality, ONE)
+	i.Cardinality++
 }
 
-func (self *IBF) Invert() {
-	for _, cell := range self.p.Cells {
+// Remove deletes the key from the set.
+//
+// NOTE: This does not know if the key already exists and will add it
+// unconditionally. If the key did already exist in the set, then that
+// effectively would add it!
+func (i *IBF) Remove(key []byte) {
+	digest := i.Hasher.Hash(key)
+	cells := i.getPositions(key, digest)
+
+	for _, c := range cells {
+		c.Remove(key, digest)
+	}
+
+	i.Cardinality--
+}
+
+// Invert flips the cardinality of the set and the cells. As if all elements
+// has instead been removed from the set instead of added.
+func (i *IBF) Invert() {
+	for _, cell := range i.Cells {
 		cell.Invert()
 	}
 
-	self.p.Cardinality.Mul(self.p.Cardinality, NEG)
+	i.Cardinality *= -1
 }
 
-func (self *IBF) Pop() (*big.Int, error) {
-	all_empty := true
+// Pop finds a key in a pure cell, removes it from the set, and returns it. If
+// no pure cell can be found it returns ErrNoPureCell indicating that there are
+// more elements in the set, but they cannot be popped. If the set is empty it
+// returns ErrEmptySet.
+func (i *IBF) Pop() ([]byte, error) {
+	allEmpty := true
 
 	// Look for a pure cell.
-	for _, cell := range self.p.Cells {
-		if cell.IsPure(self.p.Hasher) {
-			result := big.NewInt(0).Set(cell.GetId())
-			self.Remove(result)
-			return result, nil
+	for _, cell := range i.Cells {
+		if cell.IsPure(i.Hasher) {
+			key := cell.GetKey()
+			i.Remove(key)
+
+			return key, nil
 		}
 
-		if all_empty && !cell.IsEmpty() {
-			all_empty = false
+		if allEmpty && !cell.IsEmpty() {
+			allEmpty = false
 		}
 	}
 
 	// Are there non-empty cells?
-	if !all_empty {
-		return nil, errors.New("More elements in the set, but unable to retrieve.")
+	if !allEmpty {
+		return nil, ErrNoPureCell
 	}
 
 	// Empty set, nothing to pop.
-	return nil, errors.New("Empty set.")
+	return nil, ErrEmptySet
 }
 
-func (self *IBF) Union(ibf IBFer) {
-	cells := ibf.GetCells()
+// Union inserts all the elements from the provided set to this set.
+//
+// NOTE: This assumes the two sets are disjoint and configured the same. If the
+// two sets are not disjoint this will actually perform a symmetric difference
+// and the cardinality will be incorrect! If the two sets are not configured
+// the same then the behavior is undefined and could potentially panic.
+func (i *IBF) Union(other *IBF) {
+	cells := other.GetCells()
 
-	for i := 0; i < len(self.p.Cells); i++ {
-		self.p.Cells[i].Union(cells[i])
+	for j := 0; j < len(i.Cells); j++ {
+		i.Cells[j].Union(cells[j])
 	}
 
-	self.p.Cardinality.Add(self.p.Cardinality, ibf.GetCardinality())
+	i.Cardinality += other.GetCardinality()
 }
 
-func (self *IBF) Subtract(ibf IBFer) {
-	cells := ibf.GetCells()
+// Subtract removes all the elements from the provided set from this set.
+//
+// NOTE: This assumes the other set is a subset of this one. If that isn't true
+// then this will actually perform a symmetric difference and the cardinality
+// will be incorrect! If the two sets are not configured the same then the
+// behavior is undefined and could potentially panic.
+func (i *IBF) Subtract(other *IBF) {
+	cells := other.GetCells()
 
-	for i := 0; i < len(self.p.Cells); i++ {
-		self.p.Cells[i].Subtract(cells[i])
+	for j := 0; j < len(i.Cells); j++ {
+		i.Cells[j].Subtract(cells[j])
 	}
 
-	self.p.Cardinality.Sub(self.p.Cardinality, ibf.GetCardinality())
+	i.Cardinality -= other.GetCardinality()
 }
 
-func (self *IBF) Clone() IBFer {
-	clone := NewIBF(self.p.Size, self.p.Positioners, self.p.Hasher)
-	for i, c := range self.p.Cells {
-		clone.p.Cells[i] = c.Clone().(*Cell)
+// Clone returns a copy of this set.
+func (i *IBF) Clone() (clone *IBF) {
+	clone = NewIBFWithHash(i.Size, i.Positioners, i.Hasher)
+
+	for j, c := range i.Cells {
+		clone.Cells[j] = c.Clone()
 	}
+
+	clone.Cardinality = i.Cardinality
 
 	return clone
 }
 
-func (self *IBF) GetSize() uint64 {
-	return self.p.Size
+// GetSize returns the IBF's size.
+func (i *IBF) GetSize() uint64 {
+	return i.Size
 }
 
-func (self *IBF) GetCells() []Celler {
-	cells := make([]Celler, len(self.p.Cells))
-	for i, c := range self.p.Cells {
-		cells[i] = c
+// GetCells returns the IBF's cells.
+func (i *IBF) GetCells() []*Cell {
+	return i.Cells
+}
+
+// GetCardinality returns the IBF's cardinality.
+func (i *IBF) GetCardinality() int64 {
+	return i.Cardinality
+}
+
+// IsEmpty returns true if all the cells are empty and the cardinality is zero.
+func (i *IBF) IsEmpty() bool {
+	if i.Cardinality != 0 {
+		return false
 	}
-	return cells
-}
 
-func (self *IBF) GetCardinality() *big.Int {
-	return big.NewInt(0).Set(self.p.Cardinality)
-}
-
-func (self *IBF) IsEmpty() bool {
-	all_empty := true
-
-	for _, cell := range self.p.Cells {
-		if !cell.IsEmpty() && cell.GetCount() > 0 {
-			all_empty = false
-			break
+	for _, cell := range i.Cells {
+		if !cell.IsEmpty() {
+			return false
 		}
 	}
 
-	return all_empty
-}
-
-func (self *IBF) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&self.p)
-}
-
-func (self *IBF) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &self.p)
+	return true
 }

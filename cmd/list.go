@@ -1,49 +1,44 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 
-	"github.com/calebcase/ibf/lib"
+	ibf "github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
 )
 
 var listCmd = &cobra.Command{
 	Use:   "list IBF",
 	Short: "List available keys from the set.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var path = args[0]
 
-		file, err := os.Open(path)
-		cannot(err)
-
-		decoder := json.NewDecoder(file)
-
-		ibf := ibf.NewEmptyIBF()
-		err = decoder.Decode(ibf)
-		cannot(err)
-		file.Close()
+		set, err := open(path)
+		if err != nil {
+			return err
+		}
 
 		leftEmpty := true
-		for val, err := ibf.Pop(); err == nil; val, err = ibf.Pop() {
+		for val, err := set.Pop(); err == nil; val, err = set.Pop() {
 			if !cfg.suppressLeft {
-				fmt.Printf("%s\n", string(val.Bytes()))
+				fmt.Printf("%s\n", string(val))
 			}
 		}
 		if !cfg.suppressLeft {
-			leftEmpty = ibf.IsEmpty()
+			leftEmpty = set.IsEmpty()
 		}
 
 		rightEmpty := true
-		ibf.Invert()
-		for val, err := ibf.Pop(); err == nil; val, err = ibf.Pop() {
+		set.Invert()
+		for val, err := set.Pop(); err == nil; val, err = set.Pop() {
 			if !cfg.suppressRight {
-				fmt.Printf("%s\n", string(val.Bytes()))
+				fmt.Printf("%s\n", string(val))
 			}
 		}
 		if !cfg.suppressRight {
-			rightEmpty = ibf.IsEmpty()
+			rightEmpty = set.IsEmpty()
 		}
 
 		// Incomplete listing?
@@ -60,8 +55,11 @@ var listCmd = &cobra.Command{
 			}
 
 			fmt.Fprintf(os.Stderr, "Unable to list all elements (%s).\n", side)
-			os.Exit(1)
+
+			return ibf.ErrNoPureCell
 		}
+
+		return nil
 	},
 }
 

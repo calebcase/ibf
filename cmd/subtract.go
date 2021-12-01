@@ -1,39 +1,30 @@
 package cmd
 
 import (
-	"encoding/json"
-	"os"
-
-	"github.com/calebcase/ibf/lib"
+	ibf "github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
 )
 
 var subtractCmd = &cobra.Command{
 	Use:   "subtract IBF IBF [IBF]",
 	Short: "Subtract the second IBF from the first. If third is provided, write the result there. Otherwise overwrite the first.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:  cobra.RangeArgs(2, 3),
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		paths := args
-		ibfs := [2]ibf.IBFer{}
+		sets := [2]*ibf.IBF{}
 
 		for i, path := range paths {
 			if i > 1 {
 				break
 			}
 
-			file, err := os.Open(path)
-			cannot(err)
-
-			decoder := json.NewDecoder(file)
-
-			ibf := ibf.NewEmptyIBF()
-			err = decoder.Decode(ibf)
-			cannot(err)
-			ibfs[i] = ibf
-
-			file.Close()
+			sets[i], err = open(path)
+			if err != nil {
+				return err
+			}
 		}
 
-		ibfs[0].Subtract(ibfs[1])
+		sets[0].Subtract(sets[1])
 
 		var output string
 
@@ -43,13 +34,7 @@ var subtractCmd = &cobra.Command{
 			output = paths[2]
 		}
 
-		file, err := os.Create(output)
-		cannot(err)
-
-		encoder := json.NewEncoder(file)
-
-		err = encoder.Encode(ibfs[0])
-		cannot(err)
+		return create(output, sets[0])
 	},
 }
 

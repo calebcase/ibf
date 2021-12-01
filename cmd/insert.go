@@ -3,13 +3,10 @@ package cmd
 import (
 	"bufio"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
-	"math/big"
 	"os"
 	"strings"
 
-	"github.com/calebcase/ibf/lib"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -17,7 +14,8 @@ import (
 var insertCmd = &cobra.Command{
 	Use:   "insert IBF [KEY]",
 	Short: "Insert the key into the set. If key isn't provided, they will be read from stdin one per line.",
-	Run: func(cmd *cobra.Command, args []string) {
+	Args:  cobra.RangeArgs(1, 2),
+	RunE: func(cmd *cobra.Command, args []string) (err error) {
 		var path = args[0]
 
 		// Should we echo our input?
@@ -32,22 +30,13 @@ var insertCmd = &cobra.Command{
 			}
 		}
 
-		file, err := os.Open(path)
-		cannot(err)
-
-		decoder := json.NewDecoder(file)
-
-		ibf := ibf.NewEmptyIBF()
-		err = decoder.Decode(ibf)
-		cannot(err)
-		file.Close()
+		set, err := open(path)
+		if err != nil {
+			return err
+		}
 
 		if len(args) == 2 {
-			var key = args[1]
-
-			val := new(big.Int)
-			val.SetBytes([]byte(key))
-			ibf.Insert(val)
+			set.Insert([]byte(args[1]))
 		} else {
 			scanner := bufio.NewScanner(os.Stdin)
 
@@ -80,34 +69,29 @@ var insertCmd = &cobra.Command{
 			count := -1
 
 			for scanner.Scan() {
+				count++
+
 				bytes := scanner.Bytes()
-				count += 1
-				val := new(big.Int)
 
 				if cfg.blockSize >= 0 && cfg.blockIndex >= 0 {
 					idx := make([]byte, 8)
-					binary.LittleEndian.PutUint64(idx, uint64(count))
-					bytes = append(bytes, 1)
+					binary.BigEndian.PutUint64(idx, uint64(count))
 					bytes = append(bytes, idx...)
 				}
-				val.SetBytes(bytes)
-				ibf.Insert(val)
+
+				set.Insert(bytes)
 
 				if echoed {
 					fmt.Printf("%s\n", string(bytes))
 				}
 			}
-
-			cannot(scanner.Err())
+			err = scanner.Err()
+			if err != nil {
+				return err
+			}
 		}
 
-		file, err = os.Create(path)
-		cannot(err)
-
-		encoder := json.NewEncoder(file)
-
-		err = encoder.Encode(&ibf)
-		cannot(err)
+		return create(path, set)
 	},
 }
 
