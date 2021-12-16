@@ -43,6 +43,13 @@ func (b *block) Xor(other *block) {
 func (b *block) Value() []byte {
 	size := binary.BigEndian.Uint64(b.Data[:8])
 
+	// This truncates the value. The user of value should be comparing it
+	// to the value hash (done elsewhere) and that will (usually) catch
+	// this error.
+	if 8+size > uint64(len(b.Data)) {
+		size = uint64(len(b.Data)) - 8
+	}
+
 	return b.Data[8 : 8+size]
 }
 
